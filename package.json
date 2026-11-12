@@ -1,0 +1,16 @@
+{
+  "name": "rdv-sim",
+  "version": "1.1.0",
+  "description": "Simulacao de transferencia de votos a partir do RDV (Presidente) - TSE 2026",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "simular": "node bin/simular.js",
+    "cli": "node bin/simular.js"
+  },
+  "dependencies": {},
+  "engines": {
+    "node": ">=18"
+  },
+  "private": true
+}

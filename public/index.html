@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Simulação RDV — Presidente 2026</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --surface: #1a2332;
+      --surface2: #243044;
+      --border: #2d3a4f;
+      --text: #e7ecf3;
+      --muted: #8b9bb4;
+      --accent: #3b82f6;
+      --accent2: #60a5fa;
+      --green: #34d399;
+      --red: #f87171;
+      --amber: #fbbf24;
+      --purple: #a78bfa;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(ellipse at top, #1a2740 0%, var(--bg) 55%);
+      color: var(--text);
+      min-height: 100vh;
+      line-height: 1.55;
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+      padding: 32px 20px 64px;
+    }
+
+    header { margin-bottom: 24px; }
+    header h1 {
+      font-size: 1.55rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+    header p { color: var(--muted); margin-top: 6px; font-size: 0.95rem; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 22px 24px;
+      margin-bottom: 18px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    }
+
+    .card h2 {
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 14px;
+    }
+
+    .card h3 {
+      font-size: 0.95rem;
+      margin: 14px 0 8px;
+      color: var(--text);
+    }
+
+    .prose {
+      color: var(--muted);
+      font-size: 0.92rem;
+    }
+    .prose a { color: var(--accent2); }
+    .prose strong { color: var(--text); }
+    .prose ul { margin: 8px 0 8px 18px; }
+    .prose li { margin: 4px 0; }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+    }
+
+    label {
+      display: block;
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-bottom: 6px;
+      font-weight: 600;
+    }
+
+    select, button {
+      font: inherit;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+    }
+    select:focus { border-color: var(--accent); }
+    select:disabled { opacity: 0.45; cursor: not-allowed; }
+
+    .status {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 10px;
+      background: var(--surface2);
+      color: var(--muted);
+      font-size: 0.9rem;
+      display: none;
+    }
+    .status.visible { display: block; }
+    .status.loading { color: var(--accent2); }
+    .status.error {
+      color: var(--red);
+      background: rgba(248,113,113,0.08);
+      border: 1px solid rgba(248,113,113,0.25);
+    }
+
+    .spinner {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid var(--accent2);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      vertical-align: -2px;
+      margin-right: 8px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    table.probs {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+      margin-top: 10px;
+    }
+    table.probs th, table.probs td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+    }
+    table.probs th {
+      background: var(--surface2);
+      color: var(--muted);
+      font-weight: 600;
+      font-size: 0.78rem;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    table.probs td.num {
+      font-variant-numeric: tabular-nums;
+      text-align: right;
+    }
+
+    .note {
+      margin-top: 10px;
+      font-size: 0.82rem;
+      color: var(--muted);
+    }
+
+    #resultado { display: none; }
+    #resultado.visible { display: block; }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+    @media (max-width: 700px) {
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .stat-card {
+      background: var(--surface2);
+      border-radius: 12px;
+      padding: 14px 16px;
+      border: 1px solid var(--border);
+    }
+    .stat-card h3 {
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin: 0 0 10px;
+      font-weight: 600;
+    }
+    .stat-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 5px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      font-size: 0.94rem;
+    }
+    .stat-row:last-child { border-bottom: none; }
+    .stat-row .label { color: var(--muted); }
+    .stat-row .value { font-weight: 700; font-variant-numeric: tabular-nums; }
+    .value.f { color: var(--amber); }
+    .value.l { color: var(--red); }
+    .value.n { color: var(--purple); }
+    .value.b { color: var(--muted); }
+    .value.loops { color: var(--green); font-size: 1.12rem; }
+
+    .compare {
+      margin-top: 8px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-weight: 700;
+    }
+    .badge.ok { background: rgba(52,211,153,0.15); color: var(--green); }
+    .badge.warn { background: rgba(251,191,36,0.15); color: var(--amber); }
+
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .btn:hover { border-color: var(--accent); background: #2a3a55; }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn.primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+    }
+    .btn.primary:hover { background: #2563eb; }
+    .btn.wa { background: #128C7E; border-color: #128C7E; color: #fff; }
+    .btn.wa:hover { background: #0e7a6e; }
+    .btn.x { background: #111; border-color: #333; color: #fff; }
+    .btn.copy { background: var(--surface2); }
+
+    .attempts {
+      margin-top: 8px;
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    footer {
+      margin-top: 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Simulação RDV — Presidente 2026</h1>
+      <p>Monte Carlo de transferência de votos do 1º para o 2º turno, seção a seção, com dados públicos do TSE.</p>
+    </header>
+
+    <!-- METODOLOGIA -->
+    <div class="card">
+      <h2>Como funciona a simulação</h2>
+      <div class="prose">
+        <p>
+          A ferramenta baixa o <strong>Registro Digital do Voto (RDV)</strong> oficial do TSE
+          da seção escolhida (1º e 2º turno), extrai só os votos de <strong>Presidente</strong>
+          e simula a transferência do 1º para o 2º turno com um modelo de Monte Carlo.
+        </p>
+        <h3>Probabilidades de transferência</h3>
+        <p>
+          As chances abaixo inspiram-se em pesquisas de <strong>transferência de voto</strong>
+          divulgadas pela <strong>Quaest</strong> no período entre o 1º e o 2º turno de 2026
+          (migração de eleitores de candidatos eliminados e retenção dos finalistas).
+          Cobertura jornalística:
+          <a href="https://www.estadao.com.br/politica/eleicoes/flavio-ou-lula-para-onde-vao-os-votos-dados-aos-candidatos-derrotados-no-1-turno-nprp/" target="_blank" rel="noopener">Estadão</a>
+          ·
+          <a href="https://www.opovo.com.br/noticias/politica/eleicoes/2026/10/16/quaest-traz-transferencia-de-voto-no-2-turno-a-flavio-e-lula.html" target="_blank" rel="noopener">O Povo</a>
+          ·
+          <a href="https://quaest.com.br/segundo-turno-2026-votos-brancos-nulos/" target="_blank" rel="noopener">Quaest</a>.
+        </p>
+        <p class="note" style="margin-top:8px">
+          Observação: os percentuais da tabela são os <em>valores usados no código</em> desta simulação
+          (modelo simplificado). Não substituem a leitura integral dos relatórios da Quaest,
+          que variam por rodada e têm margem de erro maior nos subgrupos.
+        </p>
+      </div>
+
+      <table class="probs">
+        <thead>
+          <tr>
+            <th>Voto no 1º turno</th>
+            <th>→ Flávio (22)</th>
+            <th>→ Lula (13)</th>
+            <th>→ Branco</th>
+            <th>→ Outro / nulo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>14 (candidato eliminado)</td>
+            <td class="num">43,7%</td>
+            <td class="num">33,6%</td>
+            <td class="num">22,7%</td>
+            <td class="num">0%</td>
+          </tr>
+          <tr>
+            <td>55 (candidato eliminado)</td>
+            <td class="num">68,3%</td>
+            <td class="num">21,6%</td>
+            <td class="num">3,8%</td>
+            <td class="num">0%</td>
+          </tr>
+          <tr>
+            <td>30 (candidato eliminado)</td>
+            <td class="num">67,7%</td>
+            <td class="num">13,4%</td>
+            <td class="num">18,9%</td>
+            <td class="num">0%</td>
+          </tr>
+          <tr>
+            <td>70 (candidato eliminado)</td>
+            <td class="num">44,2%</td>
+            <td class="num">38,0%</td>
+            <td class="num">16,7%</td>
+            <td class="num">0%</td>
+          </tr>
+          <tr>
+            <td>13 (Lula no 1º)</td>
+            <td class="num">1%</td>
+            <td class="num">98%</td>
+            <td class="num">0,5%</td>
+            <td class="num">0,5%</td>
+          </tr>
+          <tr>
+            <td>22 (Flávio no 1º)</td>
+            <td class="num">98%</td>
+            <td class="num">2%</td>
+            <td class="num">0%</td>
+            <td class="num">0%</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="prose" style="margin-top:14px">
+        <h3>Regras extras do modelo</h3>
+        <ul>
+          <li><strong>Quem não votou no 1º turno</strong> mas aparece no 2º: 51,04% Flávio · 42,71% Lula · 6,25% branco/nulo.</li>
+          <li><strong>Nulos / códigos fora da tabela</strong> no 1º turno: 62,63% branco/nulo · 20,20% Lula · 17,17% Flávio.</li>
+          <li><strong>Branco no 1º turno</strong> permanece branco.</li>
+          <li>O tamanho do eleitorado é equalizado ao do 2º turno (completa com “não votou” ou remove votos aleatórios).</li>
+        </ul>
+        <h3>Os dois cenários</h3>
+        <ul>
+          <li><strong>Sem fator forçado:</strong> só as probabilidades acima.</li>
+          <li><strong>Com fator forçado:</strong> a cada 10 votos processados, 1 é forçado para 13 (Lula). Serve para testar o quão “difícil” é reproduzir o placar do 2º turno sob uma hipótese artificial de desvio.</li>
+        </ul>
+        <p>
+          Em cada cenário o algoritmo tenta até <strong>10.000</strong> vezes obter exatamente
+          os totais de Flávio e Lula do 2º turno oficial da seção.
+        </p>
+      </div>
+    </div>
+
+    <!-- FILTROS -->
+    <div class="card">
+      <h2>Escolha a seção</h2>
+      <div class="filters">
+        <div>
+          <label for="sel-estado">Estado</label>
+          <select id="sel-estado"><option value="">Carregando estados...</option></select>
+        </div>
+        <div>
+          <label for="sel-cidade">Município</label>
+          <select id="sel-cidade" disabled><option value="">Selecione um estado</option></select>
+        </div>
+        <div>
+          <label for="sel-zona">Zona</label>
+          <select id="sel-zona" disabled><option value="">Selecione um município</option></select>
+        </div>
+        <div>
+          <label for="sel-secao">Seção</label>
+          <select id="sel-secao" disabled><option value="">Selecione uma zona</option></select>
+        </div>
+      </div>
+      <div id="status" class="status"></div>
+    </div>
+
+    <!-- RESULTADO -->
+    <div id="resultado">
+      <div class="card">
+        <h2>Resultados oficiais da seção</h2>
+        <div class="grid-2">
+          <div class="stat-card">
+            <h3>1º turno</h3>
+            <div class="stat-row"><span class="label">Flávio (22)</span><span class="value f" id="p1-f">—</span></div>
+            <div class="stat-row"><span class="label">Lula (13)</span><span class="value l" id="p1-l">—</span></div>
+            <div class="stat-row"><span class="label">Nulos</span><span class="value n" id="p1-n">—</span></div>
+            <div class="stat-row"><span class="label">Brancos</span><span class="value b" id="p1-b">—</span></div>
+            <div class="stat-row"><span class="label">Total</span><span class="value" id="p1-t">—</span></div>
+          </div>
+          <div class="stat-card">
+            <h3>2º turno</h3>
+            <div class="stat-row"><span class="label">Flávio (22)</span><span class="value f" id="p2-f">—</span></div>
+            <div class="stat-row"><span class="label">Lula (13)</span><span class="value l" id="p2-l">—</span></div>
+            <div class="stat-row"><span class="label">Nulos</span><span class="value n" id="p2-n">—</span></div>
+            <div class="stat-row"><span class="label">Brancos</span><span class="value b" id="p2-b">—</span></div>
+            <div class="stat-row"><span class="label">Total</span><span class="value" id="p2-t">—</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Simulações de transferência</h2>
+        <div class="grid-2">
+          <div class="stat-card">
+            <h3>Com fator forçado (1 a cada 10 → 13)</h3>
+            <div class="stat-row"><span class="label">Loops necessários</span><span class="value loops" id="c-loops">—</span></div>
+            <div class="stat-row"><span class="label">Flávio simulado</span><span class="value f" id="c-f">—</span></div>
+            <div class="stat-row"><span class="label">Lula simulado</span><span class="value l" id="c-l">—</span></div>
+            <div class="stat-row"><span class="label">Nulos</span><span class="value n" id="c-n">—</span></div>
+            <div class="stat-row"><span class="label">Brancos</span><span class="value b" id="c-b">—</span></div>
+            <div class="compare" id="c-match"></div>
+          </div>
+          <div class="stat-card">
+            <h3>Sem fator forçado</h3>
+            <div class="stat-row"><span class="label">Loops necessários</span><span class="value loops" id="s-loops">—</span></div>
+            <div class="stat-row"><span class="label">Flávio simulado</span><span class="value f" id="s-f">—</span></div>
+            <div class="stat-row"><span class="label">Lula simulado</span><span class="value l" id="s-l">—</span></div>
+            <div class="stat-row"><span class="label">Nulos</span><span class="value n" id="s-n">—</span></div>
+            <div class="stat-row"><span class="label">Brancos</span><span class="value b" id="s-b">—</span></div>
+            <div class="compare" id="s-match"></div>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button type="button" class="btn primary" id="btn-retry">Tentar de novo nesta seção</button>
+          <button type="button" class="btn wa" id="btn-wa">Compartilhar no WhatsApp</button>
+          <button type="button" class="btn x" id="btn-x">Compartilhar no X</button>
+          <button type="button" class="btn copy" id="btn-copy">Copiar texto</button>
+        </div>
+        <div class="attempts" id="attempts-info"></div>
+      </div>
+    </div>
+
+    <footer>
+      Dados públicos do TSE · RDV decodificado localmente · Modelo de transferência inspirado em pesquisas Quaest · Simulação Monte Carlo (até 10.000 tentativas por cenário)
+    </footer>
+  </div>
+
+  <script>
+    function decodeJwsPayload(jws) {
+      const parts = jws.trim().split('.');
+      if (parts.length !== 3) throw new Error('JWS inválido');
+      let b64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+      const pad = b64.length % 4;
+      if (pad) b64 += '='.repeat(4 - pad);
+      const bin = atob(b64);
+      const bytes = Uint8Array.from(bin, m => m.codePointAt(0));
+      return JSON.parse(new TextDecoder('utf-8').decode(bytes));
+    }
+
+    const selEstado = document.getElementById('sel-estado');
+    const selCidade = document.getElementById('sel-cidade');
+    const selZona = document.getElementById('sel-zona');
+    const selSecao = document.getElementById('sel-secao');
+    const statusEl = document.getElementById('status');
+    const resultadoEl = document.getElementById('resultado');
+    const attemptsInfo = document.getElementById('attempts-info');
+
+    let municipios = [];
+    let estadoAtual = '';
+    let cidadeNome = '';
+    let lastResult = null;
+    let attempts = 0;
+
+    function setStatus(msg, type = '') {
+      statusEl.className = 'status visible' + (type ? ' ' + type : '');
+      statusEl.innerHTML = msg;
+    }
+    function clearStatus() {
+      statusEl.className = 'status';
+      statusEl.textContent = '';
+    }
+
+    function setSelectsDisabled(disabled) {
+      [selEstado, selCidade, selZona, selSecao].forEach(s => s.disabled = disabled);
+      // reabilita conforme hierarquia se não estiver loading
+      if (!disabled) {
+        if (!estadoAtual) {
+          selCidade.disabled = true;
+          selZona.disabled = true;
+          selSecao.disabled = true;
+        } else if (!selCidade.value) {
+          selZona.disabled = true;
+          selSecao.disabled = true;
+        } else if (!selZona.value) {
+          selSecao.disabled = true;
+        }
+      }
+    }
+
+    fetch('https://resultados.tse.jus.br/oficial/ele2026/6258/config/mun-e006258-cm.jws')
+      .then(r => r.text())
+      .then(jws => {
+        const data = decodeJwsPayload(jws);
+        selEstado.innerHTML = '<option value="">Selecione um estado...</option>';
+        (data.abr || []).slice().sort((a, b) => a.ds.localeCompare(b.ds))
+          .forEach(est => selEstado.add(new Option(est.ds, est.cd)));
+      })
+      .catch(err => setStatus('Erro ao carregar estados: ' + err.message, 'error'));
+
+    selEstado.addEventListener('change', async () => {
+      estadoAtual = selEstado.value;
+      municipios = [];
+      cidadeNome = '';
+      attempts = 0;
+      lastResult = null;
+      selCidade.innerHTML = '<option value="">Carregando municípios...</option>';
+      selCidade.disabled = true;
+      selZona.innerHTML = '<option value="">Selecione um município</option>';
+      selZona.disabled = true;
+      selSecao.innerHTML = '<option value="">Selecione uma zona</option>';
+      selSecao.disabled = true;
+      resultadoEl.classList.remove('visible');
+      clearStatus();
+
+      if (!estadoAtual) {
+        selCidade.innerHTML = '<option value="">Selecione um estado</option>';
+        return;
+      }
+
+      try {
+        const url = `https://resultados.tse.jus.br/oficial/ele2026/arquivo-urna/3220/config/${estadoAtual}/${estadoAtual}-p003220-cs.jws`;
+        const jws = await fetch(url).then(r => r.text());
+        const data = decodeJwsPayload(jws);
+        municipios = (data.abr || []).flatMap(e => e.mu || []);
+        selCidade.innerHTML = '<option value="">Selecione um município...</option>';
+        municipios.slice().sort((a, b) => a.nm.localeCompare(b.nm))
+          .forEach(mu => selCidade.add(new Option(`${mu.nm} (${mu.cd})`, mu.cd)));
+        selCidade.disabled = false;
+      } catch (err) {
+        setStatus('Erro ao carregar municípios: ' + err.message, 'error');
+        selCidade.innerHTML = '<option value="">Erro ao carregar</option>';
+      }
+    });
+
+    selCidade.addEventListener('change', () => {
+      selZona.innerHTML = '<option value="">Selecione a zona...</option>';
+      selSecao.innerHTML = '<option value="">Selecione uma zona primeiro</option>';
+      selZona.disabled = true;
+      selSecao.disabled = true;
+      resultadoEl.classList.remove('visible');
+      clearStatus();
+      attempts = 0;
+      lastResult = null;
+
+      const cidade = municipios.find(m => m.cd === selCidade.value);
+      cidadeNome = cidade ? cidade.nm : '';
+      if (!cidade) return;
+      (cidade.zon || []).forEach(zon => selZona.add(new Option(`Zona ${zon.cd}`, zon.cd)));
+      selZona.disabled = false;
+    });
+
+    selZona.addEventListener('change', () => {
+      selSecao.innerHTML = '<option value="">Selecione a seção...</option>';
+      selSecao.disabled = true;
+      resultadoEl.classList.remove('visible');
+      clearStatus();
+      attempts = 0;
+      lastResult = null;
+
+      const cidade = municipios.find(m => m.cd === selCidade.value);
+      const zona = cidade?.zon?.find(z => z.cd === selZona.value);
+      if (!zona) return;
+      (zona.sec || []).forEach(sec => selSecao.add(new Option(`Seção ${sec.ns}`, sec.ns)));
+      selSecao.disabled = false;
+    });
+
+    async function rodarSimulacao() {
+      const estado = estadoAtual;
+      const cidade = selCidade.value;
+      const zona = selZona.value;
+      const secao = selSecao.value;
+      if (!estado || !cidade || !zona || !secao) return;
+
+      setStatus('<span class="spinner"></span>Baixando RDVs e rodando simulação… isso pode levar alguns segundos.', 'loading');
+      setSelectsDisabled(true);
+      document.getElementById('btn-retry').disabled = true;
+
+      try {
+        const qs = new URLSearchParams({ estado, cidade, zona, secao });
+        const res = await fetch('/api/simular?' + qs.toString());
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Erro na simulação');
+
+        attempts += 1;
+        lastResult = data;
+        preencherResultado(data);
+        clearStatus();
+        resultadoEl.classList.add('visible');
+        attemptsInfo.textContent = `Tentativas nesta seção: ${attempts}`;
+        resultadoEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } catch (err) {
+        setStatus('Erro: ' + err.message, 'error');
+      } finally {
+        setSelectsDisabled(false);
+        document.getElementById('btn-retry').disabled = false;
+      }
+    }
+
+    selSecao.addEventListener('change', () => {
+      attempts = 0;
+      lastResult = null;
+      rodarSimulacao();
+    });
+
+    document.getElementById('btn-retry').addEventListener('click', () => {
+      rodarSimulacao();
+    });
+
+    function preencherResultado(data) {
+      const p1 = data.primeiro_turno;
+      const p2 = data.segundo_turno;
+      const c = data.simulacao_com_roubo;
+      const s = data.simulacao_sem_roubo;
+
+      document.getElementById('p1-f').textContent = p1.flavio;
+      document.getElementById('p1-l').textContent = p1.lula;
+      document.getElementById('p1-n').textContent = p1.nulo;
+      document.getElementById('p1-b').textContent = p1.branco;
+      document.getElementById('p1-t').textContent = p1.total;
+
+      document.getElementById('p2-f').textContent = p2.flavio;
+      document.getElementById('p2-l').textContent = p2.lula;
+      document.getElementById('p2-n').textContent = p2.nulo;
+      document.getElementById('p2-b').textContent = p2.branco;
+      document.getElementById('p2-t').textContent = p2.total;
+
+      document.getElementById('c-loops').textContent = c.loops_necessarios;
+      document.getElementById('c-f').textContent = c.flavio;
+      document.getElementById('c-l').textContent = c.lula;
+      document.getElementById('c-n').textContent = c.nulo;
+      document.getElementById('c-b').textContent = c.branco;
+
+      document.getElementById('s-loops').textContent = s.loops_necessarios;
+      document.getElementById('s-f').textContent = s.flavio;
+      document.getElementById('s-l').textContent = s.lula;
+      document.getElementById('s-n').textContent = s.nulo;
+      document.getElementById('s-b').textContent = s.branco;
+
+      const matchC = c.flavio === p2.flavio && c.lula === p2.lula;
+      const matchS = s.flavio === p2.flavio && s.lula === p2.lula;
+
+      document.getElementById('c-match').innerHTML = matchC
+        ? '<span class="badge ok">Bateu com o 2º turno</span>'
+        : '<span class="badge warn">Não convergiu em 10.000 loops</span>';
+
+      document.getElementById('s-match').innerHTML = matchS
+        ? '<span class="badge ok">Bateu com o 2º turno</span>'
+        : '<span class="badge warn">Não convergiu em 10.000 loops</span>';
+    }
+
+    function montarTextoCompartilhamento() {
+      if (!lastResult) return '';
+      const p = lastResult.parametros;
+      const p2 = lastResult.segundo_turno;
+      const c = lastResult.simulacao_com_roubo;
+      const s = lastResult.simulacao_sem_roubo;
+      const matchS = s.flavio === p2.flavio && s.lula === p2.lula;
+      const matchC = c.flavio === p2.flavio && c.lula === p2.lula;
+
+      const cidade = cidadeNome || p.cidade;
+      const secao = p.secao;
+      const zona = p.zona;
+
+      let texto =
+        `Aqui em ${cidade}, zona ${zona}, seção ${secao}, rodei ${attempts} vez(es) a simulação de Monte Carlo ` +
+        `de transferência de votos (1º → 2º turno, Presidente).\n\n`;
+
+      if (matchS) {
+        texto += `Sem forçar nada, consegui refletir o resultado do segundo turno em ${s.loops_necessarios} loop(s).\n`;
+      } else {
+        texto += `Sem forçar nada, NÃO consegui refletir o resultado do segundo turno em até 10.000 loops.\n`;
+      }
+
+      if (matchC) {
+        texto += `Porém, forçando (a cada 10 votos, 1 indo para o 13), o resultado bateu em ${c.loops_necessarios} loop(s).\n`;
+      } else {
+        texto += `Mesmo forçando (a cada 10 votos, 1 indo para o 13), também não convergiu em 10.000 loops.\n`;
+      }
+
+      texto += `\n2º turno oficial: Flávio ${p2.flavio} · Lula ${p2.lula} · Nulos ${p2.nulo} · Brancos ${p2.branco}`;
+      texto += `\nModelo inspirado em transferência Quaest + RDV público do TSE.`;
+      return texto;
+    }
+
+    document.getElementById('btn-wa').addEventListener('click', () => {
+      const texto = montarTextoCompartilhamento();
+      if (!texto) return;
+      const url = 'https://wa.me/?text=' + encodeURIComponent(texto);
+      window.open(url, '_blank', 'noopener');
+    });
+
+    document.getElementById('btn-x').addEventListener('click', () => {
+      const texto = montarTextoCompartilhamento();
+      if (!texto) return;
+      const url = 'https://twitter.com/intent/tweet?text=' + encodeURIComponent(texto.slice(0, 240));
+      window.open(url, '_blank', 'noopener');
+    });
+
+    document.getElementById('btn-copy').addEventListener('click', async () => {
+      const texto = montarTextoCompartilhamento();
+      if (!texto) return;
+      try {
+        await navigator.clipboard.writeText(texto);
+        const btn = document.getElementById('btn-copy');
+        const old = btn.textContent;
+        btn.textContent = 'Copiado!';
+        setTimeout(() => { btn.textContent = old; }, 1500);
+      } catch {
+        prompt('Copie o texto abaixo:', texto);
+      }
+    });
+  </script>
+</body>
+</html>
